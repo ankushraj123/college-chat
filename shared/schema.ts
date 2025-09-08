@@ -93,6 +93,68 @@ export const likes = pgTable("likes", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+// VIP System Tables
+export const userTokens = pgTable("user_tokens", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id),
+  sessionId: varchar("session_id").references(() => sessions.id),
+  balance: integer("balance").notNull().default(0),
+  totalEarned: integer("total_earned").notNull().default(0),
+  totalSpent: integer("total_spent").notNull().default(0),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const vipMemberships = pgTable("vip_memberships", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id),
+  sessionId: varchar("session_id").references(() => sessions.id),
+  membershipType: text("membership_type").notNull(), // basic, premium, elite
+  isActive: boolean("is_active").notNull().default(true),
+  expiresAt: timestamp("expires_at"),
+  purchasedAt: timestamp("purchased_at").notNull().defaultNow(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const marketplaceItems = pgTable("marketplace_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  category: text("category").notNull(), // vip_features, premium_services, special_access
+  price: integer("price").notNull(), // price in tokens
+  createdByUserId: varchar("created_by_user_id").references(() => users.id),
+  isActive: boolean("is_active").notNull().default(true),
+  features: jsonb("features"), // array of features included
+  duration: integer("duration"), // duration in days (null for permanent)
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const tokenTransactions = pgTable("token_transactions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id),
+  sessionId: varchar("session_id").references(() => sessions.id),
+  type: text("type").notNull(), // purchase, spend, earn, refund
+  amount: integer("amount").notNull(),
+  description: text("description").notNull(),
+  relatedItemId: varchar("related_item_id"), // marketplace item or service purchased
+  paymentMethod: text("payment_method"), // stripe, admin_grant, etc
+  paymentReference: text("payment_reference"), // external payment ID
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const vipPurchases = pgTable("vip_purchases", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id),
+  sessionId: varchar("session_id").references(() => sessions.id),
+  marketplaceItemId: varchar("marketplace_item_id").references(() => marketplaceItems.id),
+  tokensSpent: integer("tokens_spent").notNull(),
+  status: text("status").notNull().default("active"), // active, expired, refunded
+  expiresAt: timestamp("expires_at"),
+  purchasedAt: timestamp("purchased_at").notNull().defaultNow(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 // Insert schemas
 export const insertCollegeSchema = createInsertSchema(colleges).omit({ id: true, createdAt: true });
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
@@ -120,6 +182,34 @@ export const insertDirectMessageSchema = createInsertSchema(directMessages).omit
 export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({ id: true, createdAt: true });
 export const insertLikeSchema = createInsertSchema(likes).omit({ id: true, createdAt: true });
 
+// VIP System Insert Schemas
+export const insertUserTokensSchema = createInsertSchema(userTokens).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true,
+  totalEarned: true,
+  totalSpent: true 
+});
+export const insertVipMembershipSchema = createInsertSchema(vipMemberships).omit({ 
+  id: true, 
+  createdAt: true,
+  purchasedAt: true 
+});
+export const insertMarketplaceItemSchema = createInsertSchema(marketplaceItems).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+export const insertTokenTransactionSchema = createInsertSchema(tokenTransactions).omit({ 
+  id: true, 
+  createdAt: true 
+});
+export const insertVipPurchaseSchema = createInsertSchema(vipPurchases).omit({ 
+  id: true, 
+  createdAt: true,
+  purchasedAt: true 
+});
+
 // Types
 export type College = typeof colleges.$inferSelect;
 export type User = typeof users.$inferSelect;
@@ -139,3 +229,16 @@ export type InsertComment = z.infer<typeof insertCommentSchema>;
 export type InsertDirectMessage = z.infer<typeof insertDirectMessageSchema>;
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
 export type InsertLike = z.infer<typeof insertLikeSchema>;
+
+// VIP System Types
+export type UserTokens = typeof userTokens.$inferSelect;
+export type VipMembership = typeof vipMemberships.$inferSelect;
+export type MarketplaceItem = typeof marketplaceItems.$inferSelect;
+export type TokenTransaction = typeof tokenTransactions.$inferSelect;
+export type VipPurchase = typeof vipPurchases.$inferSelect;
+
+export type InsertUserTokens = z.infer<typeof insertUserTokensSchema>;
+export type InsertVipMembership = z.infer<typeof insertVipMembershipSchema>;
+export type InsertMarketplaceItem = z.infer<typeof insertMarketplaceItemSchema>;
+export type InsertTokenTransaction = z.infer<typeof insertTokenTransactionSchema>;
+export type InsertVipPurchase = z.infer<typeof insertVipPurchaseSchema>;
