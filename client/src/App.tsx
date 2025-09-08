@@ -7,6 +7,7 @@ import { ThemeProvider } from "./components/theme-provider";
 import LandingPage from "@/pages/landing";
 import ChatPage from "@/pages/chat";
 import AdminPage from "@/pages/admin";
+import VipPage from "@/pages/vip";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -15,6 +16,7 @@ function Router() {
       <Route path="/" component={LandingPage} />
       <Route path="/chat" component={ChatPage} />
       <Route path="/admin" component={AdminPage} />
+      <Route path="/vip" component={VipPage} />
       <Route component={NotFound} />
     </Switch>
   );
