@@ -12,9 +12,10 @@ import type { Confession, Comment } from "@shared/schema";
 
 interface ConfessionCardProps {
   confession: Confession;
+  featured?: boolean;
 }
 
-export function ConfessionCard({ confession }: ConfessionCardProps) {
+export function ConfessionCard({ confession, featured = false }: ConfessionCardProps) {
   const [showComments, setShowComments] = useState(false);
   const [newComment, setNewComment] = useState("");
   const [commentNickname, setCommentNickname] = useState("");
@@ -98,110 +99,130 @@ export function ConfessionCard({ confession }: ConfessionCardProps) {
     }
   };
 
+  const getCategoryColor = (category: string) => {
+    const colors: Record<string, string> = {
+      crush: 'bg-pink-500',
+      funny: 'bg-yellow-500',
+      secrets: 'bg-green-500',
+      rants: 'bg-red-500',
+      advice: 'bg-blue-500',
+      academic: 'bg-indigo-500',
+    };
+    return colors[category] || 'bg-gray-500';
+  };
+
   return (
-    <Card className="hover:shadow-lg transition-all duration-200" data-testid={`card-confession-${confession.id}`}>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Badge className="bg-primary/20 text-primary" data-testid={`badge-category-${confession.category}`}>
-              {getCategoryEmoji(confession.category)} {confession.category.charAt(0).toUpperCase() + confession.category.slice(1)}
-            </Badge>
-            <span className="text-sm text-muted-foreground" data-testid={`text-author-${confession.id}`}>
-              {confession.nickname || "Anonymous User"}
-            </span>
-          </div>
-          <span className="text-xs text-muted-foreground" data-testid={`text-time-${confession.id}`}>
-            {formatTime(confession.createdAt.toString())}
+    <div className={`bg-gray-800 rounded-xl p-4 border border-gray-700 hover:border-gray-600 transition-all duration-200 ${featured ? 'ring-2 ring-purple-500/50' : ''}`} data-testid={`card-confession-${confession.id}`}>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center space-x-2">
+          <Badge className={`${getCategoryColor(confession.category)} text-white text-xs px-2 py-1`} data-testid={`badge-category-${confession.category}`}>
+            {getCategoryEmoji(confession.category)} {confession.category.charAt(0).toUpperCase() + confession.category.slice(1)}
+          </Badge>
+          <span className="text-sm text-gray-400" data-testid={`text-author-${confession.id}`}>
+            {confession.nickname || "Anonymous User"}
           </span>
         </div>
-      </CardHeader>
+        <div className="flex items-center space-x-2">
+          <span className="text-xs text-gray-400" data-testid={`text-time-${confession.id}`}>
+            {formatTime(confession.createdAt.toString())}
+          </span>
+          <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white p-1">
+            <i className="fas fa-flag"></i>
+          </Button>
+        </div>
+      </div>
       
-      <CardContent>
-        <p className="text-foreground mb-4 leading-relaxed" data-testid={`text-content-${confession.id}`}>
-          {confession.content}
-        </p>
+      <p className="text-white mb-4 leading-relaxed" data-testid={`text-content-${confession.id}`}>
+        {confession.content}
+      </p>
         
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleLike}
-              disabled={toggleLike.isPending}
-              className="text-muted-foreground hover:text-primary"
-              data-testid={`button-like-${confession.id}`}
-            >
-              <i className={`far fa-heart mr-1 ${toggleLike.isPending ? 'animate-pulse' : ''}`}></i>
-              {confession.likes}
-            </Button>
-            
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowComments(!showComments)}
-              className="text-muted-foreground hover:text-primary"
-              data-testid={`button-comments-${confession.id}`}
-            >
-              <i className="far fa-comment mr-1"></i>
-              {confession.commentCount}
-            </Button>
-          </div>
+      <div className="flex items-center space-x-4">
+        <span className="text-sm text-gray-400">
+          {new Date(confession.createdAt).toLocaleString()} • {confession.likes} points • {confession.commentCount} comments
+        </span>
+      </div>
+      
+      <div className="flex items-center justify-between mt-4">
+        <div className="flex items-center space-x-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleLike}
+            disabled={toggleLike.isPending}
+            className="text-gray-400 hover:text-pink-400 bg-gray-700 px-3 py-1 rounded-full"
+            data-testid={`button-like-${confession.id}`}
+          >
+            <i className={`far fa-heart mr-1 ${toggleLike.isPending ? 'animate-pulse' : ''}`}></i>
+            {confession.likes}
+          </Button>
           
           <Button
             variant="ghost"
             size="sm"
-            className="text-muted-foreground hover:text-primary"
+            onClick={() => setShowComments(!showComments)}
+            className="text-gray-400 hover:text-blue-400 bg-gray-700 px-3 py-1 rounded-full"
+            data-testid={`button-comments-${confession.id}`}
+          >
+            <i className="far fa-comment mr-1"></i>
+            {confession.commentCount}
+          </Button>
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-gray-400 hover:text-purple-400 bg-gray-700 px-3 py-1 rounded-full"
             data-testid={`button-share-${confession.id}`}
           >
-            <i className="far fa-share mr-1"></i>
-            Share
+            <i className="far fa-paper-plane mr-1"></i>
+            {showComments ? '1' : '2'}
           </Button>
         </div>
+      </div>
 
-        {showComments && (
-          <div className="mt-4 space-y-4 border-t pt-4" data-testid={`container-comments-${confession.id}`}>
-            {/* Existing Comments */}
-            {comments.length > 0 && (
-              <div className="space-y-3">
-                {comments.map((comment) => (
-                  <div key={comment.id} className="bg-muted/50 rounded-lg p-3" data-testid={`comment-${comment.id}`}>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium" data-testid={`text-comment-author-${comment.id}`}>
-                        {comment.nickname || "Anonymous User"}
-                      </span>
-                      <span className="text-xs text-muted-foreground" data-testid={`text-comment-time-${comment.id}`}>
-                        {formatTime(comment.createdAt.toString())}
-                      </span>
-                    </div>
-                    <p className="text-sm" data-testid={`text-comment-content-${comment.id}`}>
-                      {comment.content}
-                    </p>
+      {showComments && (
+        <div className="mt-4 space-y-4 border-t border-gray-700 pt-4" data-testid={`container-comments-${confession.id}`}>
+          {/* Existing Comments */}
+          {comments.length > 0 && (
+            <div className="space-y-3">
+              {comments.map((comment) => (
+                <div key={comment.id} className="bg-gray-700 rounded-lg p-3" data-testid={`comment-${comment.id}`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-white" data-testid={`text-comment-author-${comment.id}`}>
+                      {comment.nickname || "Anonymous User"}
+                    </span>
+                    <span className="text-xs text-gray-400" data-testid={`text-comment-time-${comment.id}`}>
+                      {formatTime(comment.createdAt.toString())}
+                    </span>
                   </div>
-                ))}
-              </div>
-            )}
+                  <p className="text-sm text-gray-300" data-testid={`text-comment-content-${comment.id}`}>
+                    {comment.content}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
 
-            {/* Add Comment */}
-            <div className="space-y-2">
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Nickname (optional)"
-                  value={commentNickname}
-                  onChange={(e) => setCommentNickname(e.target.value)}
-                  className="w-32"
-                  data-testid={`input-comment-nickname-${confession.id}`}
-                />
-              </div>
-              
-              <div className="flex gap-2">
-                <Textarea
-                  placeholder="Add a comment..."
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  rows={2}
-                  className="flex-1"
-                  data-testid={`textarea-comment-${confession.id}`}
-                />
+          {/* Add Comment */}
+          <div className="space-y-2">
+            <div className="flex gap-2">
+              <Input
+                placeholder="Nickname (optional)"
+                value={commentNickname}
+                onChange={(e) => setCommentNickname(e.target.value)}
+                className="w-32 bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+                data-testid={`input-comment-nickname-${confession.id}`}
+              />
+            </div>
+            
+            <div className="flex gap-2">
+              <Textarea
+                placeholder="Add a comment..."
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                rows={2}
+                className="flex-1 bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+                data-testid={`textarea-comment-${confession.id}`}
+              />
                 <Button
                   onClick={handleComment}
                   disabled={!newComment.trim() || addComment.isPending}
@@ -218,7 +239,6 @@ export function ConfessionCard({ confession }: ConfessionCardProps) {
             </div>
           </div>
         )}
-      </CardContent>
-    </Card>
+    </div>
   );
 }

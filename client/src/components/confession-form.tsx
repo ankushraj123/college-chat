@@ -84,37 +84,36 @@ export function ConfessionForm({ collegeCode }: ConfessionFormProps) {
   ];
 
   return (
-    <Card className="glass-card" data-testid="card-confession-form">
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <span className="gradient-text">Share Your Confession</span>
-          {dailyLimit && (
-            <div className="text-sm font-normal text-muted-foreground">
-              {dailyLimit.remaining} left today
-            </div>
-          )}
-        </CardTitle>
-      </CardHeader>
-      
-      <CardContent>
-        {isLimitReached ? (
-          <div className="text-center py-8" data-testid="container-limit-reached">
-            <i className="fas fa-hourglass-end text-4xl text-muted-foreground mb-4"></i>
-            <h3 className="text-xl font-semibold mb-2">Daily Limit Reached</h3>
-            <p className="text-muted-foreground">
-              You've used all 5 of your confessions for today. Come back tomorrow to share more!
-            </p>
+    <div className="bg-gray-800 rounded-xl p-6 border border-gray-700" data-testid="card-confession-form">
+      <div className="flex items-center mb-4">
+        <i className="fas fa-edit text-purple-400 mr-2"></i>
+        <h3 className="text-lg font-semibold text-white">Share Your Confession</h3>
+        {dailyLimit && (
+          <div className="ml-auto text-sm text-blue-400">
+            <i className="fas fa-file-alt mr-1"></i>
+            {dailyLimit.remaining} confessions remaining today
           </div>
-        ) : !isExpanded ? (
-          <Button
-            onClick={() => setIsExpanded(true)}
-            variant="outline"
-            className="w-full h-16 text-left justify-start"
-            data-testid="button-expand-form"
-          >
-            <i className="fas fa-comment-dots mr-3 text-primary"></i>
-            <span className="text-muted-foreground">What's on your mind? Share anonymously...</span>
-          </Button>
+        )}
+      </div>
+      
+      {isLimitReached ? (
+        <div className="text-center py-8" data-testid="container-limit-reached">
+          <i className="fas fa-hourglass-end text-4xl text-gray-500 mb-4"></i>
+          <h3 className="text-xl font-semibold mb-2 text-white">Daily Limit Reached</h3>
+          <p className="text-gray-400">
+            You've used all 5 of your confessions for today. Come back tomorrow to share more!
+          </p>
+        </div>
+      ) : !isExpanded ? (
+        <Button
+          onClick={() => setIsExpanded(true)}
+          variant="outline"
+          className="w-full h-16 text-left justify-start bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600 hover:text-white"
+          data-testid="button-expand-form"
+        >
+          <i className="fas fa-comment-dots mr-3 text-purple-400"></i>
+          <span>What's on your mind? Share anonymously...</span>
+        </Button>
         ) : (
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -129,6 +128,7 @@ export function ConfessionForm({ collegeCode }: ConfessionFormProps) {
                         placeholder="Share what's on your mind... (10-1000 characters)"
                         rows={4}
                         {...field}
+                        className="bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-purple-400"
                         data-testid="textarea-confession-content"
                       />
                     </FormControl>
@@ -149,7 +149,7 @@ export function ConfessionForm({ collegeCode }: ConfessionFormProps) {
                       <FormLabel>Category</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value} data-testid="select-confession-category">
                         <FormControl>
-                          <SelectTrigger>
+                          <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
                             <SelectValue placeholder="Choose a category..." />
                           </SelectTrigger>
                         </FormControl>
@@ -176,6 +176,7 @@ export function ConfessionForm({ collegeCode }: ConfessionFormProps) {
                         <Input
                           placeholder="Anonymous User"
                           {...field}
+                          className="bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-purple-400"
                           data-testid="input-nickname"
                         />
                       </FormControl>
@@ -190,6 +191,7 @@ export function ConfessionForm({ collegeCode }: ConfessionFormProps) {
                   type="button"
                   variant="outline"
                   onClick={() => setIsExpanded(false)}
+                  className="bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600"
                   data-testid="button-cancel-confession"
                 >
                   Cancel
@@ -197,7 +199,7 @@ export function ConfessionForm({ collegeCode }: ConfessionFormProps) {
                 <Button
                   type="submit"
                   disabled={createConfession.isPending}
-                  className="flex-1 bg-primary hover:bg-primary/90"
+                  className="bg-purple-500 hover:bg-purple-600 text-white flex-1"
                   data-testid="button-submit-confession"
                 >
                   {createConfession.isPending ? (
@@ -216,7 +218,6 @@ export function ConfessionForm({ collegeCode }: ConfessionFormProps) {
             </form>
           </Form>
         )}
-      </CardContent>
-    </Card>
+    </div>
   );
 }
