@@ -1,8 +1,11 @@
 import { 
   type College, type User, type Session, type Confession, type Comment, 
   type DirectMessage, type ChatMessage, type Like, type ChatRoom,
+  type UserTokens, type VipMembership, type MarketplaceItem, type TokenTransaction, type VipPurchase,
   type InsertCollege, type InsertUser, type InsertSession, type InsertConfession,
-  type InsertComment, type InsertDirectMessage, type InsertChatMessage, type InsertLike
+  type InsertComment, type InsertDirectMessage, type InsertChatMessage, type InsertLike,
+  type InsertUserTokens, type InsertVipMembership, type InsertMarketplaceItem, 
+  type InsertTokenTransaction, type InsertVipPurchase
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -56,6 +59,34 @@ export interface IStorage {
   createLike(like: InsertLike): Promise<Like>;
   deleteLike(confessionId: string, sessionId: string): Promise<boolean>;
   hasUserLiked(confessionId: string, sessionId: string): Promise<boolean>;
+
+  // VIP System - Tokens
+  getUserTokens(userId?: string, sessionId?: string): Promise<UserTokens | undefined>;
+  createUserTokens(tokens: InsertUserTokens): Promise<UserTokens>;
+  updateUserTokens(userId: string, updates: Partial<UserTokens>): Promise<UserTokens | undefined>;
+  addTokens(userId: string, sessionId: string, amount: number, description: string): Promise<boolean>;
+  spendTokens(userId: string, sessionId: string, amount: number, description: string): Promise<boolean>;
+
+  // VIP System - Memberships
+  getVipMembership(userId?: string, sessionId?: string): Promise<VipMembership | undefined>;
+  createVipMembership(membership: InsertVipMembership): Promise<VipMembership>;
+  updateVipMembership(id: string, updates: Partial<VipMembership>): Promise<VipMembership | undefined>;
+
+  // VIP System - Marketplace
+  getMarketplaceItems(): Promise<MarketplaceItem[]>;
+  getMarketplaceItem(id: string): Promise<MarketplaceItem | undefined>;
+  createMarketplaceItem(item: InsertMarketplaceItem): Promise<MarketplaceItem>;
+  updateMarketplaceItem(id: string, updates: Partial<MarketplaceItem>): Promise<MarketplaceItem | undefined>;
+  deleteMarketplaceItem(id: string): Promise<boolean>;
+
+  // VIP System - Transactions
+  getTokenTransactions(userId?: string, sessionId?: string): Promise<TokenTransaction[]>;
+  createTokenTransaction(transaction: InsertTokenTransaction): Promise<TokenTransaction>;
+
+  // VIP System - Purchases
+  getVipPurchases(userId?: string, sessionId?: string): Promise<VipPurchase[]>;
+  createVipPurchase(purchase: InsertVipPurchase): Promise<VipPurchase>;
+  updateVipPurchase(id: string, updates: Partial<VipPurchase>): Promise<VipPurchase | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -68,6 +99,13 @@ export class MemStorage implements IStorage {
   private chatRooms: Map<string, ChatRoom> = new Map();
   private chatMessages: Map<string, ChatMessage> = new Map();
   private likes: Map<string, Like> = new Map();
+  
+  // VIP System Storage
+  private userTokens: Map<string, UserTokens> = new Map();
+  private vipMemberships: Map<string, VipMembership> = new Map();
+  private marketplaceItems: Map<string, MarketplaceItem> = new Map();
+  private tokenTransactions: Map<string, TokenTransaction> = new Map();
+  private vipPurchases: Map<string, VipPurchase> = new Map();
 
   constructor() {
     this.initializeDefaultData();
@@ -115,6 +153,46 @@ export class MemStorage implements IStorage {
         isActive: true,
         maxParticipants: 50,
         createdAt: new Date(),
+      });
+    });
+
+    // Create default marketplace items
+    const marketplaceItems = [
+      {
+        title: "VIP Unlimited Confessions",
+        description: "Remove daily confession limits and post unlimited confessions",
+        category: "vip_features",
+        price: 50,
+        features: ["unlimited_confessions", "priority_moderation"],
+        duration: 30,
+      },
+      {
+        title: "Premium Chat Access",
+        description: "Access to exclusive VIP chat rooms and direct messaging",
+        category: "premium_services", 
+        price: 75,
+        features: ["vip_chat_rooms", "direct_messaging", "custom_nickname_colors"],
+        duration: 30,
+      },
+      {
+        title: "Elite Membership",
+        description: "Full access to all premium features and special badges",
+        category: "special_access",
+        price: 150,
+        features: ["all_vip_features", "elite_badge", "priority_support", "custom_themes"],
+        duration: 30,
+      },
+    ];
+
+    marketplaceItems.forEach(item => {
+      const id = randomUUID();
+      this.marketplaceItems.set(id, {
+        id,
+        ...item,
+        createdByUserId: adminId,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       });
     });
   }
@@ -402,6 +480,197 @@ export class MemStorage implements IStorage {
   async hasUserLiked(confessionId: string, sessionId: string): Promise<boolean> {
     return Array.from(this.likes.values())
       .some(like => like.confessionId === confessionId && like.sessionId === sessionId);
+  }
+
+  // VIP System - Tokens
+  async getUserTokens(userId?: string, sessionId?: string): Promise<UserTokens | undefined> {
+    return Array.from(this.userTokens.values())
+      .find(tokens => tokens.userId === userId || tokens.sessionId === sessionId);
+  }
+
+  async createUserTokens(insertTokens: InsertUserTokens): Promise<UserTokens> {
+    const id = randomUUID();
+    const tokens: UserTokens = { 
+      ...insertTokens, 
+      id,
+      totalEarned: 0,
+      totalSpent: 0,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.userTokens.set(id, tokens);
+    return tokens;
+  }
+
+  async updateUserTokens(userId: string, updates: Partial<UserTokens>): Promise<UserTokens | undefined> {
+    const tokens = Array.from(this.userTokens.values())
+      .find(t => t.userId === userId);
+    if (!tokens) return undefined;
+    
+    const updated = { ...tokens, ...updates, updatedAt: new Date() };
+    this.userTokens.set(tokens.id, updated);
+    return updated;
+  }
+
+  async addTokens(userId: string, sessionId: string, amount: number, description: string): Promise<boolean> {
+    let tokens = await this.getUserTokens(userId, sessionId);
+    
+    if (!tokens) {
+      tokens = await this.createUserTokens({ userId, sessionId, balance: 0 });
+    }
+    
+    const updated = await this.updateUserTokens(tokens.userId!, {
+      balance: tokens.balance + amount,
+      totalEarned: tokens.totalEarned + amount,
+    });
+
+    // Create transaction record
+    await this.createTokenTransaction({
+      userId,
+      sessionId,
+      type: "earn",
+      amount,
+      description,
+    });
+
+    return !!updated;
+  }
+
+  async spendTokens(userId: string, sessionId: string, amount: number, description: string): Promise<boolean> {
+    const tokens = await this.getUserTokens(userId, sessionId);
+    
+    if (!tokens || tokens.balance < amount) {
+      return false;
+    }
+    
+    const updated = await this.updateUserTokens(tokens.userId!, {
+      balance: tokens.balance - amount,
+      totalSpent: tokens.totalSpent + amount,
+    });
+
+    // Create transaction record
+    await this.createTokenTransaction({
+      userId,
+      sessionId,
+      type: "spend",
+      amount: -amount,
+      description,
+    });
+
+    return !!updated;
+  }
+
+  // VIP System - Memberships
+  async getVipMembership(userId?: string, sessionId?: string): Promise<VipMembership | undefined> {
+    return Array.from(this.vipMemberships.values())
+      .find(membership => 
+        (membership.userId === userId || membership.sessionId === sessionId) && 
+        membership.isActive &&
+        (!membership.expiresAt || new Date(membership.expiresAt) > new Date())
+      );
+  }
+
+  async createVipMembership(insertMembership: InsertVipMembership): Promise<VipMembership> {
+    const id = randomUUID();
+    const membership: VipMembership = { 
+      ...insertMembership, 
+      id,
+      purchasedAt: new Date(),
+      createdAt: new Date(),
+    };
+    this.vipMemberships.set(id, membership);
+    return membership;
+  }
+
+  async updateVipMembership(id: string, updates: Partial<VipMembership>): Promise<VipMembership | undefined> {
+    const membership = this.vipMemberships.get(id);
+    if (!membership) return undefined;
+    
+    const updated = { ...membership, ...updates };
+    this.vipMemberships.set(id, updated);
+    return updated;
+  }
+
+  // VIP System - Marketplace
+  async getMarketplaceItems(): Promise<MarketplaceItem[]> {
+    return Array.from(this.marketplaceItems.values())
+      .filter(item => item.isActive)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  async getMarketplaceItem(id: string): Promise<MarketplaceItem | undefined> {
+    return this.marketplaceItems.get(id);
+  }
+
+  async createMarketplaceItem(insertItem: InsertMarketplaceItem): Promise<MarketplaceItem> {
+    const id = randomUUID();
+    const item: MarketplaceItem = { 
+      ...insertItem, 
+      id,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.marketplaceItems.set(id, item);
+    return item;
+  }
+
+  async updateMarketplaceItem(id: string, updates: Partial<MarketplaceItem>): Promise<MarketplaceItem | undefined> {
+    const item = this.marketplaceItems.get(id);
+    if (!item) return undefined;
+    
+    const updated = { ...item, ...updates, updatedAt: new Date() };
+    this.marketplaceItems.set(id, updated);
+    return updated;
+  }
+
+  async deleteMarketplaceItem(id: string): Promise<boolean> {
+    return this.marketplaceItems.delete(id);
+  }
+
+  // VIP System - Transactions
+  async getTokenTransactions(userId?: string, sessionId?: string): Promise<TokenTransaction[]> {
+    return Array.from(this.tokenTransactions.values())
+      .filter(transaction => transaction.userId === userId || transaction.sessionId === sessionId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  async createTokenTransaction(insertTransaction: InsertTokenTransaction): Promise<TokenTransaction> {
+    const id = randomUUID();
+    const transaction: TokenTransaction = { 
+      ...insertTransaction, 
+      id,
+      createdAt: new Date(),
+    };
+    this.tokenTransactions.set(id, transaction);
+    return transaction;
+  }
+
+  // VIP System - Purchases
+  async getVipPurchases(userId?: string, sessionId?: string): Promise<VipPurchase[]> {
+    return Array.from(this.vipPurchases.values())
+      .filter(purchase => purchase.userId === userId || purchase.sessionId === sessionId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  async createVipPurchase(insertPurchase: InsertVipPurchase): Promise<VipPurchase> {
+    const id = randomUUID();
+    const purchase: VipPurchase = { 
+      ...insertPurchase, 
+      id,
+      purchasedAt: new Date(),
+      createdAt: new Date(),
+    };
+    this.vipPurchases.set(id, purchase);
+    return purchase;
+  }
+
+  async updateVipPurchase(id: string, updates: Partial<VipPurchase>): Promise<VipPurchase | undefined> {
+    const purchase = this.vipPurchases.get(id);
+    if (!purchase) return undefined;
+    
+    const updated = { ...purchase, ...updates };
+    this.vipPurchases.set(id, updated);
+    return updated;
   }
 }
 
