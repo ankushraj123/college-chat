@@ -28,11 +28,12 @@ export default function LandingPage() {
         <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-secondary/20 to-accent/20"></div>
         <div className="container mx-auto text-center relative z-10">
           <div className="max-w-4xl mx-auto">
-            <h1 className="text-5xl md:text-7xl font-bold mb-6 gradient-text animate-float" data-testid="text-hero-title">
-              Your Secrets Are Safe Here
+            <h1 className="text-5xl md:text-7xl font-bold mb-6 animate-float" data-testid="text-hero-title">
+              <span className="gradient-text">Share Your Story</span><br />
+              <span className="text-foreground glow-green">Anonymously</span>
             </h1>
             <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-2xl mx-auto" data-testid="text-hero-description">
-              Join thousands of college students sharing anonymous confessions, secrets, and connecting safely
+              A safe space for college students to share confessions, stories, and connect with peers without judgment
             </p>
             
             {/* Daily Limit Counter */}
@@ -51,22 +52,20 @@ export default function LandingPage() {
               <Link href="/chat">
                 <Button 
                   size="lg"
-                  data-testid="button-start-anonymous-chat"
-                  className="px-8 py-4 bg-primary text-primary-foreground text-lg font-semibold hover:bg-primary/90 transform hover:scale-105 transition-all duration-200 shadow-lg animate-glow"
+                  data-testid="button-start-sharing"
+                  className="px-8 py-4 bg-primary text-primary-foreground text-lg font-semibold hover:bg-primary/90 transform hover:scale-105 transition-all duration-200 shadow-lg animate-glow rounded-full"
                 >
-                  <i className="fas fa-comment-dots mr-2"></i>
-                  Start Anonymous Chat
+                  Start Sharing
                 </Button>
               </Link>
               <Link href="/chat">
                 <Button 
                   size="lg"
-                  variant="secondary"
-                  data-testid="button-share-confession"
-                  className="px-8 py-4 bg-secondary text-secondary-foreground text-lg font-semibold hover:bg-secondary/90 transform hover:scale-105 transition-all duration-200 shadow-lg"
+                  variant="outline"
+                  data-testid="button-learn-more"
+                  className="px-8 py-4 text-lg font-semibold hover:bg-secondary/10 transform hover:scale-105 transition-all duration-200 shadow-lg rounded-full"
                 >
-                  <i className="fas fa-mask mr-2"></i>
-                  Share Confession
+                  Learn More
                 </Button>
               </Link>
             </div>
