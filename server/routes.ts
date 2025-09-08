@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertConfessionSchema, insertCommentSchema, insertDirectMessageSchema, insertChatMessageSchema, insertLikeSchema, insertUserSchema, insertSessionSchema } from "@shared/schema";
+import { insertConfessionSchema, insertCommentSchema, insertDirectMessageSchema, insertChatMessageSchema, insertLikeSchema, insertUserSchema, insertSessionSchema, insertMarketplaceItemSchema, insertVipPurchaseSchema } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -448,6 +448,252 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(updated);
     } catch (error) {
       res.status(500).json({ error: "Failed to update direct message" });
+    }
+  });
+
+  // VIP System Routes
+  
+  // Get user token balance
+  app.get("/api/vip/tokens", async (req, res) => {
+    try {
+      const { session } = await getOrCreateSession(req);
+      const tokens = await storage.getUserTokens(session.userId || undefined, session.id);
+      
+      if (!tokens) {
+        // Create initial token record
+        const newTokens = await storage.createUserTokens({
+          userId: session.userId,
+          sessionId: session.id,
+          balance: 0,
+        });
+        return res.json(newTokens);
+      }
+      
+      res.json(tokens);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get tokens" });
+    }
+  });
+
+  // Get VIP membership status
+  app.get("/api/vip/membership", async (req, res) => {
+    try {
+      const { session } = await getOrCreateSession(req);
+      const membership = await storage.getVipMembership(session.userId || undefined, session.id);
+      res.json(membership || null);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get VIP membership" });
+    }
+  });
+
+  // Get marketplace items
+  app.get("/api/vip/marketplace", async (req, res) => {
+    try {
+      const items = await storage.getMarketplaceItems();
+      res.json(items);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get marketplace items" });
+    }
+  });
+
+  // Get token transactions
+  app.get("/api/vip/transactions", async (req, res) => {
+    try {
+      const { session } = await getOrCreateSession(req);
+      const transactions = await storage.getTokenTransactions(session.userId || undefined, session.id);
+      res.json(transactions);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get transactions" });
+    }
+  });
+
+  // Get VIP purchases
+  app.get("/api/vip/purchases", async (req, res) => {
+    try {
+      const { session } = await getOrCreateSession(req);
+      const purchases = await storage.getVipPurchases(session.userId || undefined, session.id);
+      res.json(purchases);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get purchases" });
+    }
+  });
+
+  // Purchase VIP item
+  app.post("/api/vip/purchase", async (req, res) => {
+    try {
+      const { session } = await getOrCreateSession(req);
+      const { itemId } = req.body;
+
+      if (!itemId) {
+        return res.status(400).json({ error: "Item ID is required" });
+      }
+
+      // Get marketplace item
+      const item = await storage.getMarketplaceItem(itemId);
+      if (!item || !item.isActive) {
+        return res.status(404).json({ error: "Item not found or inactive" });
+      }
+
+      // Check if user has enough tokens
+      const userTokens = await storage.getUserTokens(session.userId || undefined, session.id);
+      if (!userTokens || userTokens.balance < item.price) {
+        return res.status(400).json({ 
+          error: `Insufficient tokens. You have ${userTokens?.balance || 0} tokens, but need ${item.price} tokens.` 
+        });
+      }
+
+      // Spend tokens
+      const success = await storage.spendTokens(
+        session.userId || '',
+        session.id,
+        item.price,
+        `Purchase: ${item.title}`
+      );
+
+      if (!success) {
+        return res.status(400).json({ error: "Failed to spend tokens" });
+      }
+
+      // Create VIP purchase record
+      const expiresAt = item.duration ? 
+        new Date(Date.now() + item.duration * 24 * 60 * 60 * 1000) : 
+        null;
+
+      const purchase = await storage.createVipPurchase({
+        userId: session.userId,
+        sessionId: session.id,
+        itemId: item.id,
+        itemTitle: item.title,
+        tokensSpent: item.price,
+        features: item.features,
+        status: "active",
+        expiresAt,
+      });
+
+      // Create VIP membership if needed
+      const existingMembership = await storage.getVipMembership(session.userId || undefined, session.id);
+      
+      if (!existingMembership) {
+        await storage.createVipMembership({
+          userId: session.userId,
+          sessionId: session.id,
+          membershipType: item.category,
+          features: item.features,
+          isActive: true,
+          expiresAt,
+        });
+      } else {
+        // Update existing membership with new features
+        const combinedFeatures = [...new Set([...existingMembership.features, ...item.features])];
+        const newExpiresAt = expiresAt && (!existingMembership.expiresAt || new Date(expiresAt) > new Date(existingMembership.expiresAt)) 
+          ? expiresAt 
+          : existingMembership.expiresAt;
+          
+        await storage.updateVipMembership(existingMembership.id, {
+          features: combinedFeatures,
+          expiresAt: newExpiresAt,
+        });
+      }
+
+      res.json({ success: true, purchase });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to purchase item" });
+    }
+  });
+
+  // Admin: Create marketplace item
+  app.post("/api/vip/admin/marketplace", async (req, res) => {
+    try {
+      const sessionToken = req.headers['x-session-token'];
+      if (!sessionToken) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const session = await storage.getSessionByToken(sessionToken as string);
+      if (!session?.userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const user = await storage.getUser(session.userId);
+      if (!user || user.role !== "admin") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const validatedData = insertMarketplaceItemSchema.parse(req.body);
+      const item = await storage.createMarketplaceItem({
+        ...validatedData,
+        createdByUserId: user.id,
+        isActive: true,
+      });
+
+      res.json(item);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create marketplace item" });
+    }
+  });
+
+  // Admin: Update marketplace item
+  app.put("/api/vip/admin/marketplace/:id", async (req, res) => {
+    try {
+      const sessionToken = req.headers['x-session-token'];
+      if (!sessionToken) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const session = await storage.getSessionByToken(sessionToken as string);
+      if (!session?.userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const user = await storage.getUser(session.userId);
+      if (!user || user.role !== "admin") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const updated = await storage.updateMarketplaceItem(req.params.id, req.body);
+      if (!updated) {
+        return res.status(404).json({ error: "Item not found" });
+      }
+
+      res.json(updated);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update marketplace item" });
+    }
+  });
+
+  // Admin: Give tokens to user
+  app.post("/api/vip/admin/give-tokens", async (req, res) => {
+    try {
+      const sessionToken = req.headers['x-session-token'];
+      if (!sessionToken) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const session = await storage.getSessionByToken(sessionToken as string);
+      if (!session?.userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const user = await storage.getUser(session.userId);
+      if (!user || user.role !== "admin") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const { sessionId, amount, description } = req.body;
+      
+      if (!sessionId || !amount || amount <= 0) {
+        return res.status(400).json({ error: "Valid session ID and positive amount required" });
+      }
+
+      const success = await storage.addTokens('', sessionId, amount, description || 'Admin grant');
+      
+      if (!success) {
+        return res.status(400).json({ error: "Failed to add tokens" });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to give tokens" });
     }
   });
 
