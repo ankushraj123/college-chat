@@ -76,6 +76,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/auth/me", async (req, res) => {
+    try {
+      const sessionToken = req.headers['x-session-token'];
+      if (!sessionToken) {
+        return res.status(401).json({ error: "No session token" });
+      }
+      
+      const session = await storage.getSessionByToken(sessionToken as string);
+      if (!session?.userId) {
+        return res.status(401).json({ error: "Invalid session" });
+      }
+      
+      const user = await storage.getUser(session.userId);
+      if (!user) {
+        return res.status(401).json({ error: "User not found" });
+      }
+      
+      res.json(user);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get user info" });
+    }
+  });
+
   // Session routes
   app.get("/api/session", async (req, res) => {
     try {
