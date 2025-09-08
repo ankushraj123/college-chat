@@ -10,9 +10,19 @@ export function Navigation() {
     <nav className="fixed top-0 w-full z-50 glass-card">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         <Link href="/">
-          <div className="flex items-center space-x-2" data-testid="logo-link">
-            <i className="fas fa-user-secret text-2xl text-primary"></i>
-            <span className="text-xl font-bold gradient-text">SecretChatBox</span>
+          <div className="flex items-center space-x-3" data-testid="logo-link">
+            <div className="relative">
+              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 via-pink-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                <i className="fas fa-comment-dots text-white text-lg"></i>
+              </div>
+              <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full animate-pulse"></div>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-2xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-purple-500 bg-clip-text text-transparent">
+                SecretChatBox
+              </span>
+              <span className="text-xs text-gray-400 -mt-1">Anonymous campus confessions</span>
+            </div>
           </div>
         </Link>
         
