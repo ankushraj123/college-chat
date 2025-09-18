@@ -26,8 +26,16 @@ export function useLogin() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ username, password }: { username: string; password: string }) => {
-      const response = await apiRequest("POST", "/api/auth/login", { username, password });
+    mutationFn: async ({
+      username,
+      password,
+      collegeCode,
+    }: {
+      username: string;
+      password: string;
+      collegeCode: string;
+    }) => {
+      const response = await apiRequest("POST", "/api/auth/login", { username, password, collegeCode });
       return response.json();
     },
     onSuccess: (data) => {

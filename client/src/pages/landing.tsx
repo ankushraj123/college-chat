@@ -3,11 +3,14 @@ import { Navigation } from "@/components/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { useDailyLimit } from "@/hooks/use-daily-limit";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 
 export default function LandingPage() {
   const { data: dailyLimit } = useDailyLimit();
+  const [isFiltersVisible, setIsFiltersVisible] = useState(false);
   
   const { data: stats } = useQuery({
     queryKey: ["/api/stats"],
@@ -29,7 +32,7 @@ export default function LandingPage() {
         <div className="container mx-auto text-center relative z-10">
           <div className="max-w-4xl mx-auto">
             <h1 className="text-5xl md:text-7xl font-bold mb-6 animate-float" data-testid="text-hero-title">
-              <span className="gradient-text">Share Your Story</span><br />
+              <span className="text-black dark:text-white glow-green">Share Your Story</span><br />
               <span className="text-foreground glow-green">Anonymously</span>
             </h1>
             <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-2xl mx-auto" data-testid="text-hero-description">
@@ -48,7 +51,7 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
+            <div className="flex flex-col sm:flex-row gap-8 justify-center items-center mb-12">
               <Link href="/chat">
                 <Button 
                   size="lg"
@@ -122,7 +125,7 @@ export default function LandingPage() {
         <div className="container mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-6" data-testid="text-features-title">
-              Why Students Love <span className="gradient-text">SecretChatBox</span>
+              Why Students Love <span className="text-black dark:text-white">SecretChatBox</span>
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto" data-testid="text-features-description">
               Safe, anonymous, and designed specifically for college life
@@ -261,11 +264,28 @@ export default function LandingPage() {
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-6" data-testid="text-stories-title">
-              <span className="gradient-text">Real Stories</span> from Real Students
+              <span className="text-black dark:text-white">Real Stories</span> from Real Students
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto" data-testid="text-stories-description">
               See how SecretChatBox is helping students across campuses
             </p>
+          </div>
+
+          <div className={`md:flex md:space-x-4 mb-8 ${isFiltersVisible ? "block" : "hidden"}`}>
+            <div className="w-full md:w-1/3 mb-4 md:mb-0">
+              <Input placeholder="Search confessions..." className="w-full" />
+            </div>
+            <div className="w-full md:w-2/3">
+              <div className="flex space-x-2 overflow-x-auto pb-2">
+                <Button variant="outline">All</Button>
+                <Button variant="outline">💕 Crush</Button>
+                <Button variant="outline">😂 Funny</Button>
+                <Button variant="outline">🤫 Secrets</Button>
+                <Button variant="outline">😤 Rants</Button>
+                <Button variant="outline">💡 Advice</Button>
+                <Button variant="outline">📚 Academic</Button>
+              </div>
+            </div>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
@@ -278,7 +298,7 @@ export default function LandingPage() {
                 <div className="h-60 bg-gradient-to-br from-primary/20 via-secondary/20 to-accent/20 flex items-center justify-center">
                   <i className="fas fa-quote-left text-4xl text-primary/50"></i>
                 </div>
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
                 <div className="absolute bottom-4 left-4 text-white">
                   <p className="font-semibold" data-testid={`text-story-quote-${index}`}>"{story.quote}"</p>
                   <p className="text-sm opacity-90" data-testid={`text-story-author-${index}`}>{story.author}</p>
@@ -331,7 +351,7 @@ export default function LandingPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-primary via-secondary to-accent opacity-10"></div>
         <div className="container mx-auto text-center relative z-10">
           <div className="max-w-3xl mx-auto">
-            <h2 className="text-4xl md:text-6xl font-bold mb-6 gradient-text" data-testid="text-cta-title">
+            <h2 className="text-4xl md:text-6xl font-bold mb-6 text-black dark:text-white" data-testid="text-cta-title">
               Ready to Share Your Story?
             </h2>
             <p className="text-xl text-muted-foreground mb-8" data-testid="text-cta-description">

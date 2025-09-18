@@ -103,7 +103,7 @@ export default function ChatPage() {
             {/* Hero Section */}
             <div className="text-center mb-8">
               <h2 className="text-4xl font-bold mb-4">
-                <span className="gradient-text">Share Your Story</span> <span className="text-purple-400">Anonymously</span>
+                <span className="text-purple-500">Share Your Story Anonymously</span>
               </h2>
               <p className="text-gray-400 mb-6">A safe space for college students to share confessions, stories, and connect with peers without judgment</p>
               
@@ -120,10 +120,22 @@ export default function ChatPage() {
               </div>
             </div>
 
-            <Tabs defaultValue="confessions" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-2" data-testid="tabs-main">
-                <TabsTrigger value="confessions" data-testid="tab-confessions">Confessions</TabsTrigger>
-                <TabsTrigger value="chat" data-testid="tab-chat">Live Chat</TabsTrigger>
+            <Tabs defaultValue="confessions" className="space-y-8">
+              <TabsList className="grid w-full grid-cols-2 gap-4 bg-transparent p-0" data-testid="tabs-main">
+                <TabsTrigger
+                  value="confessions"
+                  data-testid="tab-confessions"
+                  className="py-3 text-base font-semibold rounded-lg border-2 border-gray-700 bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white data-[state=active]:bg-purple-600 data-[state=active]:text-white data-[state=active]:border-purple-600 transition-all duration-200 flex items-center justify-center"
+                >
+                  <i className="fas fa-book-open mr-2"></i> Confessions
+                </TabsTrigger>
+                <TabsTrigger
+                  value="chat"
+                  data-testid="tab-chat"
+                  className="py-3 text-base font-semibold rounded-lg border-2 border-gray-700 bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white data-[state=active]:bg-purple-600 data-[state=active]:text-white data-[state=active]:border-purple-600 transition-all duration-200 flex items-center justify-center"
+                >
+                  <i className="fas fa-comments mr-2"></i> Live Chat
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="confessions">

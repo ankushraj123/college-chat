@@ -1,8 +1,9 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
+import { storage } from "./storage.js";
 import { insertConfessionSchema, insertCommentSchema, insertDirectMessageSchema, insertChatMessageSchema, insertLikeSchema, insertUserSchema, insertSessionSchema, insertMarketplaceItemSchema, insertVipPurchaseSchema } from "@shared/schema";
 import { randomUUID } from "crypto";
+import * as bcrypt from 'bcrypt';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
@@ -53,18 +54,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.post("/api/auth/login", async (req, res) => {
     try {
-      const { username, password } = req.body;
+      const { username, password, collegeCode } = req.body;
       
       const user = await storage.getUserByUsername(username);
-      if (!user || user.password !== password) {
-        return res.status(401).json({ error: "Invalid credentials" });
+      const passwordMatch = await bcrypt.compare(password, user?.password || '');
+      if (!user || !passwordMatch || user.collegeId !== collegeCode) {
+        return res.status(401).json({ error: "Invalid username, password, or college code" });
       }
       
       const sessionToken = randomUUID();
       const session = await storage.createSession({
         sessionToken,
         userId: user.id,
-        collegeCode: null,
+        collegeCode: user.collegeId,
         nickname: null,
         dailyConfessionCount: 0,
         lastResetDate: new Date().toDateString(),
@@ -310,6 +312,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(message);
     } catch (error) {
       res.status(400).json({ error: "Failed to create chat message" });
+    }
+  });
+
+    app.post("/api/admins", async (req, res) => {
+    try {
+      const { username, password, collegeCode } = req.body;
+
+      // Basic validation
+      if (!username || !password || !collegeCode) {
+        return res.status(400).json({ error: "Username, password, and college code are required" });
+      }
+
+      // Check if user already exists
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser) {
+        return res.status(409).json({ error: "User with that username already exists" });
+      }
+
+      const newUser = await storage.createUser({
+        username,
+        password,
+        collegeId: collegeCode, // Changed from collegeCode to collegeId
+        role: "admin", // New users created via this endpoint are always admins
+        // collegeId: null, // Assuming collegeId is not directly set here
+      });
+
+      res.status(201).json(newUser);
+    } catch (error) {
+      console.error("Failed to create admin:", error);
+      res.status(500).json({ error: "Failed to create admin" });
+    }
+  });
+
+  app.get("/api/admins", async (req, res) => {
+    try {
+      const admins = await storage.getUsersByRole("admin");
+      res.json(admins);
+    } catch (error) {
+      console.error("Failed to fetch admins:", error);
+      res.status(500).json({ error: "Failed to fetch admins" });
     }
   });
 
@@ -562,10 +604,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const purchase = await storage.createVipPurchase({
         userId: session.userId,
         sessionId: session.id,
-        itemId: item.id,
-        itemTitle: item.title,
+        marketplaceItemId: item.id,
         tokensSpent: item.price,
-        features: item.features,
         status: "active",
         expiresAt,
       });
@@ -578,19 +618,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userId: session.userId,
           sessionId: session.id,
           membershipType: item.category,
-          features: item.features,
           isActive: true,
           expiresAt,
         });
       } else {
         // Update existing membership with new features
-        const combinedFeatures = [...new Set([...existingMembership.features, ...item.features])];
         const newExpiresAt = expiresAt && (!existingMembership.expiresAt || new Date(expiresAt) > new Date(existingMembership.expiresAt)) 
           ? expiresAt 
           : existingMembership.expiresAt;
           
         await storage.updateVipMembership(existingMembership.id, {
-          features: combinedFeatures,
           expiresAt: newExpiresAt,
         });
       }

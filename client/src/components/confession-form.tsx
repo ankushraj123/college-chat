@@ -11,6 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useCreateConfession } from "@/hooks/use-confessions";
 import { useDailyLimit } from "@/hooks/use-daily-limit";
 import { useToast } from "@/hooks/use-toast";
+import EmojiPicker, { EmojiClickData } from "emoji-picker-react";
 
 const confessionSchema = z.object({
   content: z.string().min(10, "Confession must be at least 10 characters").max(1000, "Confession must be less than 1000 characters"),
@@ -26,6 +27,7 @@ interface ConfessionFormProps {
 
 export function ConfessionForm({ collegeCode }: ConfessionFormProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const { data: dailyLimit } = useDailyLimit();
   const createConfession = useCreateConfession();
   const { toast } = useToast();
@@ -74,6 +76,10 @@ export function ConfessionForm({ collegeCode }: ConfessionFormProps) {
     }
   };
 
+  const onEmojiClick = (emojiData: EmojiClickData) => {
+    form.setValue("content", form.getValues("content") + emojiData.emoji);
+  };
+
   const categories = [
     { value: "crush", label: "💕 Crush", emoji: "💕" },
     { value: "funny", label: "😂 Funny", emoji: "😂" },
@@ -84,7 +90,7 @@ export function ConfessionForm({ collegeCode }: ConfessionFormProps) {
   ];
 
   return (
-    <div className="bg-gray-800 rounded-xl p-6 border border-gray-700" data-testid="card-confession-form">
+    <div className="bg-gray-800 rounded-xl p-4 md:p-6 border border-gray-700" data-testid="card-confession-form">
       <div className="flex items-center mb-4">
         <i className="fas fa-edit text-purple-400 mr-2"></i>
         <h3 className="text-lg font-semibold text-white">Share Your Confession</h3>
@@ -122,16 +128,43 @@ export function ConfessionForm({ collegeCode }: ConfessionFormProps) {
                 name="content"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Your Confession</FormLabel>
+                    <div className="flex items-center justify-between">
+                      <FormLabel><span role="img" aria-label="monkey face emoji">🙊</span> Your Confession</FormLabel>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                      >
+                        <i className="far fa-smile text-2xl text-gray-400"></i>
+                      </Button>
+                    </div>
                     <FormControl>
                       <Textarea
                         placeholder="Share what's on your mind... (10-1000 characters)"
                         rows={4}
                         {...field}
-                        className="bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-purple-400"
+                        className="bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-purple-400 w-full"
                         data-testid="textarea-confession-content"
                       />
                     </FormControl>
+                    {showEmojiPicker && (
+                      <>
+                        {/* Mobile: Bottom Sheet */}
+                        <div className="fixed inset-0 z-40 bg-black/50 md:hidden" onClick={() => setShowEmojiPicker(false)}>
+                          <div
+                            className="fixed bottom-0 left-0 right-0 z-50 rounded-t-xl bg-gray-800 p-4"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <EmojiPicker onEmojiClick={onEmojiClick} width="100%" height={300} />
+                          </div>
+                        </div>
+                        {/* Desktop: Popover */}
+                        <div className="absolute right-0 z-10 hidden md:block">
+                          <EmojiPicker onEmojiClick={onEmojiClick} />
+                        </div>
+                      </>
+                    )}
                     <div className="flex justify-between text-sm text-muted-foreground">
                       <FormMessage />
                       <span>{field.value.length}/1000</span>
@@ -186,20 +219,11 @@ export function ConfessionForm({ collegeCode }: ConfessionFormProps) {
                 />
               </div>
 
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsExpanded(false)}
-                  className="bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600"
-                  data-testid="button-cancel-confession"
-                >
-                  Cancel
-                </Button>
+              <div className="flex flex-col md:flex-row gap-2">
                 <Button
                   type="submit"
                   disabled={createConfession.isPending}
-                  className="bg-purple-500 hover:bg-purple-600 text-white flex-1"
+                  className="bg-purple-500 hover:bg-purple-600 text-white w-full md:flex-1 order-1 md:order-2"
                   data-testid="button-submit-confession"
                 >
                   {createConfession.isPending ? (
@@ -213,6 +237,15 @@ export function ConfessionForm({ collegeCode }: ConfessionFormProps) {
                       Submit Confession
                     </>
                   )}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsExpanded(false)}
+                  className="bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600 w-full md:w-auto order-2 md:order-1"
+                  data-testid="button-cancel-confession"
+                >
+                  Cancel
                 </Button>
               </div>
             </form>

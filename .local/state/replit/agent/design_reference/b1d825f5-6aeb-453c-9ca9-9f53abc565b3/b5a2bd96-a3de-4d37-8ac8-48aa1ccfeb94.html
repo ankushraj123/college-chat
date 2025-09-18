@@ -1,0 +1,687 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecretChatBox - Anonymous Confessions for College Students</title>
+    <meta name="description" content="Share your secrets anonymously with fellow college students. Daily confessions, anonymous chat rooms, and safe space for students.">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                borderRadius: {
+                    lg: "var(--radius)",
+                    md: "calc(var(--radius) - 2px)",
+                    sm: "calc(var(--radius) - 4px)",
+                },
+                colors: {
+                    background: "var(--background)",
+                    foreground: "var(--foreground)",
+                    card: {
+                        DEFAULT: "var(--card)",
+                        foreground: "var(--card-foreground)",
+                    },
+                    popover: {
+                        DEFAULT: "var(--popover)",
+                        foreground: "var(--popover-foreground)",
+                    },
+                    primary: {
+                        DEFAULT: "var(--primary)",
+                        foreground: "var(--primary-foreground)",
+                    },
+                    secondary: {
+                        DEFAULT: "var(--secondary)",
+                        foreground: "var(--secondary-foreground)",
+                    },
+                    muted: {
+                        DEFAULT: "var(--muted)",
+                        foreground: "var(--muted-foreground)",
+                    },
+                    accent: {
+                        DEFAULT: "var(--accent)",
+                        foreground: "var(--accent-foreground)",
+                    },
+                    destructive: {
+                        DEFAULT: "var(--destructive)",
+                        foreground: "var(--destructive-foreground)",
+                    },
+                    border: "var(--border)",
+                    input: "var(--input)",
+                    ring: "var(--ring)",
+                },
+                fontFamily: {
+                    sans: ["Inter", "system-ui", "sans-serif"],
+                    mono: ["JetBrains Mono", "monospace"],
+                },
+                animation: {
+                    'bounce-slow': 'bounce 3s infinite',
+                    'pulse-slow': 'pulse 4s infinite',
+                    'float': 'float 6s ease-in-out infinite',
+                    'glow': 'glow 2s ease-in-out infinite alternate',
+                },
+                keyframes: {
+                    float: {
+                        '0%, 100%': { transform: 'translateY(0px)' },
+                        '50%': { transform: 'translateY(-20px)' }
+                    },
+                    glow: {
+                        '0%': { boxShadow: '0 0 5px hsl(var(--primary))' },
+                        '100%': { boxShadow: '0 0 20px hsl(var(--primary)), 0 0 30px hsl(var(--primary))' }
+                    }
+                }
+            }
+        }
+    };
+    </script>
+    
+    <style>
+        :root {
+            --background: 220 13% 97%;
+            --foreground: 220 9% 9%;
+            --card: 0 0% 100%;
+            --card-foreground: 220 9% 9%;
+            --popover: 0 0% 100%;
+            --popover-foreground: 220 9% 9%;
+            --primary: 262 52% 47%;
+            --primary-foreground: 0 0% 98%;
+            --secondary: 328 85% 70%;
+            --secondary-foreground: 0 0% 9%;
+            --muted: 220 14% 96%;
+            --muted-foreground: 220 9% 46%;
+            --accent: 25 95% 53%;
+            --accent-foreground: 0 0% 9%;
+            --destructive: 0 84% 60%;
+            --destructive-foreground: 0 0% 98%;
+            --border: 220 13% 91%;
+            --input: 220 13% 91%;
+            --ring: 262 52% 47%;
+            --radius: 0.75rem;
+        }
+
+        [data-theme="dark"] {
+            --background: 220 13% 9%;
+            --foreground: 220 9% 98%;
+            --card: 220 13% 12%;
+            --card-foreground: 220 9% 98%;
+            --popover: 220 13% 12%;
+            --popover-foreground: 220 9% 98%;
+            --primary: 262 52% 47%;
+            --primary-foreground: 0 0% 98%;
+            --secondary: 328 85% 70%;
+            --secondary-foreground: 0 0% 9%;
+            --muted: 220 13% 15%;
+            --muted-foreground: 220 9% 63%;
+            --accent: 25 95% 53%;
+            --accent-foreground: 0 0% 9%;
+            --destructive: 0 84% 60%;
+            --destructive-foreground: 0 0% 98%;
+            --border: 220 13% 15%;
+            --input: 220 13% 15%;
+            --ring: 262 52% 47%;
+        }
+
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+        
+        .gradient-text {
+            background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)), hsl(var(--accent)));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        [data-theme="dark"] .glass-card {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body class="bg-background text-foreground transition-colors duration-300" data-theme="light">
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full z-50 glass-card">
+        <div class="container mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <i class="fas fa-user-secret text-2xl text-primary"></i>
+                <span class="text-xl font-bold gradient-text">SecretChatBox</span>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button id="themeToggle" class="p-2 rounded-lg bg-muted hover:bg-primary/20 transition-colors">
+                    <i class="fas fa-moon dark:hidden"></i>
+                    <i class="fas fa-sun hidden dark:block"></i>
+                </button>
+                <button class="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors">
+                    Admin Login
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="pt-24 pb-16 px-4 relative overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-br from-primary/20 via-secondary/20 to-accent/20"></div>
+        <div class="container mx-auto text-center relative z-10">
+            <div class="max-w-4xl mx-auto">
+                <h1 class="text-5xl md:text-7xl font-bold mb-6 gradient-text animate-float">
+                    Your Secrets Are Safe Here
+                </h1>
+                <p class="text-xl md:text-2xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+                    Join thousands of college students sharing anonymous confessions, secrets, and connecting safely
+                </p>
+                
+                <!-- Daily Limit Counter -->
+                <div class="glass-card rounded-xl p-4 mb-8 max-w-md mx-auto">
+                    <div class="flex items-center justify-center space-x-2">
+                        <i class="fas fa-clock text-accent"></i>
+                        <span class="font-mono text-lg">
+                            <span class="text-primary font-bold" data-mock="true">5</span> confessions remaining today
+                        </span>
+                    </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
+                    <button class="px-8 py-4 bg-primary text-primary-foreground rounded-xl text-lg font-semibold hover:bg-primary/90 transform hover:scale-105 transition-all duration-200 shadow-lg animate-glow">
+                        <i class="fas fa-comment-dots mr-2"></i>
+                        Start Anonymous Chat
+                    </button>
+                    <button class="px-8 py-4 bg-secondary text-secondary-foreground rounded-xl text-lg font-semibold hover:bg-secondary/90 transform hover:scale-105 transition-all duration-200 shadow-lg">
+                        <i class="fas fa-mask mr-2"></i>
+                        Share Confession
+                    </button>
+                </div>
+
+                <!-- Hero Image -->
+                <!-- College students using phones in a modern campus setting -->
+                <div class="relative max-w-4xl mx-auto">
+                    <img src="https://images.unsplash.com/photo-1556075798-4825dfaaf498?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1200&h=800" 
+                         alt="College students using phones on campus" 
+                         class="rounded-2xl shadow-2xl w-full h-auto animate-float" 
+                         style="animation-delay: 1s;">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="py-16 bg-muted/50">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+                <div class="glass-card p-6 rounded-xl">
+                    <div class="text-3xl font-bold text-primary mb-2" data-mock="true">12.4K</div>
+                    <div class="text-sm text-muted-foreground">Anonymous Confessions</div>
+                </div>
+                <div class="glass-card p-6 rounded-xl">
+                    <div class="text-3xl font-bold text-secondary mb-2" data-mock="true">3.2K</div>
+                    <div class="text-sm text-muted-foreground">Active Students</div>
+                </div>
+                <div class="glass-card p-6 rounded-xl">
+                    <div class="text-3xl font-bold text-accent mb-2" data-mock="true">89%</div>
+                    <div class="text-sm text-muted-foreground">Feel Safer Sharing</div>
+                </div>
+                <div class="glass-card p-6 rounded-xl">
+                    <div class="text-3xl font-bold text-primary mb-2" data-mock="true">24/7</div>
+                    <div class="text-sm text-muted-foreground">Moderated Chat</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="py-20 px-4">
+        <div class="container mx-auto">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl md:text-5xl font-bold mb-6">
+                    Why Students Love <span class="gradient-text">SecretChatBox</span>
+                </h2>
+                <p class="text-xl text-muted-foreground max-w-2xl mx-auto">
+                    Safe, anonymous, and designed specifically for college life
+                </p>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Anonymous Confessions -->
+                <div class="bg-card rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 group border">
+                    <div class="w-16 h-16 bg-primary/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                        <i class="fas fa-mask text-2xl text-primary"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4">Anonymous Confessions</h3>
+                    <p class="text-muted-foreground mb-6">Share your deepest thoughts without revealing your identity. Optional nicknames for personality.</p>
+                    
+                    <!-- Mock Confession Card -->
+                    <div class="bg-muted/50 rounded-lg p-4 text-sm" data-mock="true">
+                        <div class="flex items-center mb-2">
+                            <span class="bg-primary/20 text-primary px-2 py-1 rounded text-xs">Crush</span>
+                            <span class="ml-2 text-muted-foreground">Anonymous User</span>
+                        </div>
+                        <p>"I've had a crush on my lab partner for months but I'm too shy to say anything..."</p>
+                        <div class="flex items-center mt-2 space-x-4 text-muted-foreground">
+                            <span><i class="far fa-heart"></i> 23</span>
+                            <span><i class="far fa-comment"></i> 5</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Real-time Chat -->
+                <div class="bg-card rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 group border">
+                    <div class="w-16 h-16 bg-secondary/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                        <i class="fas fa-comments text-2xl text-secondary"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4">Real-time Anonymous Chat</h3>
+                    <p class="text-muted-foreground mb-6">Connect instantly with other students. Random pairing ensures complete anonymity.</p>
+                    
+                    <!-- Mock Chat Interface -->
+                    <div class="bg-muted/50 rounded-lg p-4 space-y-2 text-sm" data-mock="true">
+                        <div class="bg-primary/20 rounded-lg p-2 text-right">
+                            <p>"Anyone else stressed about finals?"</p>
+                        </div>
+                        <div class="bg-secondary/20 rounded-lg p-2">
+                            <p>"Totally! What's your major?"</p>
+                        </div>
+                        <div class="bg-accent/20 rounded-lg p-2">
+                            <p>"Computer Science here, drowning in code 😅"</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Daily Limits -->
+                <div class="bg-card rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 group border">
+                    <div class="w-16 h-16 bg-accent/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                        <i class="fas fa-hourglass-half text-2xl text-accent"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4">Daily Confession Limits</h3>
+                    <p class="text-muted-foreground mb-6">Quality over quantity. 5 confessions per day keeps content meaningful and prevents spam.</p>
+                    
+                    <!-- Mock Limit Counter -->
+                    <div class="bg-muted/50 rounded-lg p-4 text-center" data-mock="true">
+                        <div class="text-2xl font-bold text-accent mb-2">3</div>
+                        <p class="text-sm text-muted-foreground">Confessions remaining today</p>
+                        <div class="w-full bg-background rounded-full h-2 mt-2">
+                            <div class="bg-accent h-2 rounded-full" style="width: 40%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Moderation -->
+                <div class="bg-card rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 group border">
+                    <div class="w-16 h-16 bg-primary/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                        <i class="fas fa-shield-alt text-2xl text-primary"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4">Safe & Moderated</h3>
+                    <p class="text-muted-foreground mb-6">24/7 admin moderation ensures a safe space free from harassment and inappropriate content.</p>
+                    
+                    <!-- Admin Dashboard Mockup -->
+                    <!-- Modern admin dashboard interface showing moderation tools -->
+                    <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=400&h=200" 
+                         alt="Modern admin dashboard interface" 
+                         class="rounded-lg w-full h-auto">
+                </div>
+
+                <!-- Categories -->
+                <div class="bg-card rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 group border">
+                    <div class="w-16 h-16 bg-secondary/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                        <i class="fas fa-tags text-2xl text-secondary"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4">Organized Categories</h3>
+                    <p class="text-muted-foreground mb-6">Find what you're looking for with categories like Crush, Funny, Secrets, and Complaints.</p>
+                    
+                    <div class="flex flex-wrap gap-2" data-mock="true">
+                        <span class="bg-primary/20 text-primary px-3 py-1 rounded-full text-sm">💕 Crush</span>
+                        <span class="bg-secondary/20 text-secondary px-3 py-1 rounded-full text-sm">😂 Funny</span>
+                        <span class="bg-accent/20 text-accent px-3 py-1 rounded-full text-sm">🤫 Secrets</span>
+                        <span class="bg-muted text-muted-foreground px-3 py-1 rounded-full text-sm">😤 Rants</span>
+                    </div>
+                </div>
+
+                <!-- Direct Messages -->
+                <div class="bg-card rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 group border">
+                    <div class="w-16 h-16 bg-accent/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                        <i class="fas fa-envelope text-2xl text-accent"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4">Admin-Approved DMs</h3>
+                    <p class="text-muted-foreground mb-6">Send direct messages that require admin approval for safe, private conversations.</p>
+                    
+                    <!-- DM Request Mockup -->
+                    <div class="bg-muted/50 rounded-lg p-4 text-sm" data-mock="true">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="font-medium">DM Request</span>
+                            <span class="bg-accent/20 text-accent px-2 py-1 rounded text-xs">Pending</span>
+                        </div>
+                        <p class="text-muted-foreground">"Hi, I saw your confession about engineering stress. Want to chat?"</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Campus Life Gallery -->
+    <section class="py-20 bg-muted/30">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl md:text-5xl font-bold mb-6">
+                    <span class="gradient-text">Real Stories</span> from Real Students
+                </h2>
+                <p class="text-xl text-muted-foreground max-w-2xl mx-auto">
+                    See how SecretChatBox is helping students across campuses
+                </p>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+                <!-- Colorful campus life photos with diverse students -->
+                <div class="relative group">
+                    <img src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=400&h=300" 
+                         alt="Diverse college students studying together on campus" 
+                         class="rounded-2xl w-full h-60 object-cover group-hover:scale-105 transition-transform duration-300">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent rounded-2xl"></div>
+                    <div class="absolute bottom-4 left-4 text-white">
+                        <p class="font-semibold" data-mock="true">"Finally found my study group!"</p>
+                        <p class="text-sm opacity-90">Anonymous Student</p>
+                    </div>
+                </div>
+
+                <div class="relative group">
+                    <img src="https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=400&h=300" 
+                         alt="Students using phones and laptops in a vibrant campus setting" 
+                         class="rounded-2xl w-full h-60 object-cover group-hover:scale-105 transition-transform duration-300">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent rounded-2xl"></div>
+                    <div class="absolute bottom-4 left-4 text-white">
+                        <p class="font-semibold" data-mock="true">"Best place to share real feelings"</p>
+                        <p class="text-sm opacity-90">CS Major, UCLA</p>
+                    </div>
+                </div>
+
+                <div class="relative group">
+                    <img src="https://images.unsplash.com/photo-1541339907198-e08756dedf3f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=400&h=300" 
+                         alt="Happy college students using mobile phones outdoors" 
+                         class="rounded-2xl w-full h-60 object-cover group-hover:scale-105 transition-transform duration-300">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent rounded-2xl"></div>
+                    <div class="absolute bottom-4 left-4 text-white">
+                        <p class="font-semibold" data-mock="true">"Made real connections anonymously"</p>
+                        <p class="text-sm opacity-90">Psychology Student</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Featured Confession -->
+            <div class="max-w-4xl mx-auto">
+                <div class="glass-card rounded-2xl p-8 text-center">
+                    <div class="inline-flex items-center bg-accent/20 text-accent px-4 py-2 rounded-full text-sm font-semibold mb-6">
+                        <i class="fas fa-star mr-2"></i>
+                        Featured Confession of the Day
+                    </div>
+                    <blockquote class="text-2xl md:text-3xl font-medium mb-6" data-mock="true">
+                        "I was struggling with imposter syndrome in my computer science program. Sharing anonymously here helped me realize I wasn't alone - so many others felt the same way. The support I received gave me the confidence to keep going."
+                    </blockquote>
+                    <div class="flex items-center justify-center space-x-6 text-muted-foreground">
+                        <span><i class="fas fa-heart text-primary"></i> 156 likes</span>
+                        <span><i class="fas fa-comment"></i> 23 comments</span>
+                        <span><i class="fas fa-share"></i> 12 shares</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Chat Interface Preview -->
+    <section class="py-20 px-4">
+        <div class="container mx-auto">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl md:text-5xl font-bold mb-6">
+                    Experience the <span class="gradient-text">Interface</span>
+                </h2>
+                <p class="text-xl text-muted-foreground max-w-2xl mx-auto">
+                    Clean, intuitive design optimized for mobile and desktop
+                </p>
+            </div>
+
+            <div class="grid lg:grid-cols-2 gap-12 items-center">
+                <div>
+                    <!-- Modern chat interface mockup screenshot -->
+                    <img src="https://images.unsplash.com/photo-1611224923853-80b023f02d71?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=600&h=800" 
+                         alt="Modern chat interface mockup on mobile device" 
+                         class="rounded-2xl shadow-2xl w-full h-auto animate-float" 
+                         style="animation-delay: 2s;">
+                </div>
+                
+                <div class="space-y-8">
+                    <div class="flex items-start space-x-4">
+                        <div class="w-12 h-12 bg-primary/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-mobile-alt text-primary"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold mb-2">Mobile-First Design</h3>
+                            <p class="text-muted-foreground">Optimized for touch interactions and thumb-friendly navigation</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-start space-x-4">
+                        <div class="w-12 h-12 bg-secondary/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-palette text-secondary"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold mb-2">Dark Mode Support</h3>
+                            <p class="text-muted-foreground">Easy on the eyes during late-night study sessions</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-start space-x-4">
+                        <div class="w-12 h-12 bg-accent/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-bolt text-accent"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold mb-2">Real-time Updates</h3>
+                            <p class="text-muted-foreground">Instant notifications and live chat functionality</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-start space-x-4">
+                        <div class="w-12 h-12 bg-primary/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-search text-primary"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold mb-2">Smart Search & Filters</h3>
+                            <p class="text-muted-foreground">Find confessions by category, keywords, or engagement level</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Ad Space Section -->
+    <section class="py-16 bg-muted/30">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-12">
+                <h3 class="text-2xl font-bold mb-4">Supported by Student-Friendly Brands</h3>
+                <p class="text-muted-foreground">Carefully curated advertisements relevant to college life</p>
+            </div>
+            
+            <!-- AdSense Placeholder -->
+            <div class="max-w-4xl mx-auto">
+                <div class="bg-card border-2 border-dashed border-muted rounded-2xl p-12 text-center">
+                    <i class="fas fa-ad text-4xl text-muted-foreground mb-4"></i>
+                    <h4 class="text-xl font-semibold mb-2">Google AdSense Ready</h4>
+                    <p class="text-muted-foreground">728x90 Banner Ad Space</p>
+                    <p class="text-sm text-muted-foreground mt-2">Student discounts, textbooks, career services, and more</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="py-20 px-4 relative overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-r from-primary via-secondary to-accent opacity-10"></div>
+        <div class="container mx-auto text-center relative z-10">
+            <div class="max-w-3xl mx-auto">
+                <h2 class="text-4xl md:text-6xl font-bold mb-6 gradient-text">
+                    Ready to Share Your Story?
+                </h2>
+                <p class="text-xl text-muted-foreground mb-8">
+                    Join thousands of students in the safest anonymous community on campus
+                </p>
+                
+                <div class="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
+                    <button class="px-8 py-4 bg-primary text-primary-foreground rounded-xl text-lg font-semibold hover:bg-primary/90 transform hover:scale-105 transition-all duration-200 shadow-lg animate-glow">
+                        <i class="fas fa-play mr-2"></i>
+                        Start Chatting Now
+                    </button>
+                    <button class="px-8 py-4 bg-transparent border-2 border-primary text-primary rounded-xl text-lg font-semibold hover:bg-primary hover:text-primary-foreground transition-all duration-200">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        Learn More
+                    </button>
+                </div>
+
+                <!-- Safety Notice -->
+                <div class="glass-card rounded-xl p-6 max-w-2xl mx-auto">
+                    <div class="flex items-center justify-center space-x-2 mb-3">
+                        <i class="fas fa-shield-check text-primary"></i>
+                        <span class="font-semibold">Your Privacy is Protected</span>
+                    </div>
+                    <p class="text-sm text-muted-foreground">
+                        No personal information required. All confessions are anonymous. 24/7 moderation ensures a safe space.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-16 px-4 bg-card border-t">
+        <div class="container mx-auto">
+            <div class="grid md:grid-cols-4 gap-8 mb-12">
+                <div>
+                    <div class="flex items-center space-x-2 mb-4">
+                        <i class="fas fa-user-secret text-2xl text-primary"></i>
+                        <span class="text-xl font-bold gradient-text">SecretChatBox</span>
+                    </div>
+                    <p class="text-muted-foreground">
+                        The safest anonymous platform for college students to share, connect, and support each other.
+                    </p>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold mb-4">Features</h4>
+                    <ul class="space-y-2 text-muted-foreground">
+                        <li><a href="#" class="hover:text-primary transition-colors">Anonymous Confessions</a></li>
+                        <li><a href="#" class="hover:text-primary transition-colors">Real-time Chat</a></li>
+                        <li><a href="#" class="hover:text-primary transition-colors">Categories & Tags</a></li>
+                        <li><a href="#" class="hover:text-primary transition-colors">Admin Moderation</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold mb-4">Safety</h4>
+                    <ul class="space-y-2 text-muted-foreground">
+                        <li><a href="#" class="hover:text-primary transition-colors">Community Guidelines</a></li>
+                        <li><a href="#" class="hover:text-primary transition-colors">Report Content</a></li>
+                        <li><a href="#" class="hover:text-primary transition-colors">Privacy Policy</a></li>
+                        <li><a href="#" class="hover:text-primary transition-colors">Contact Admin</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold mb-4">Support</h4>
+                    <ul class="space-y-2 text-muted-foreground">
+                        <li><a href="#" class="hover:text-primary transition-colors">Help Center</a></li>
+                        <li><a href="#" class="hover:text-primary transition-colors">Mental Health Resources</a></li>
+                        <li><a href="#" class="hover:text-primary transition-colors">Campus Counseling</a></li>
+                        <li><a href="#" class="hover:text-primary transition-colors">Crisis Support</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="border-t border-border pt-8 text-center text-muted-foreground">
+                <p>&copy; 2024 SecretChatBox. Made with ❤️ for college students everywhere.</p>
+                <p class="mt-2 text-sm">Remember: You're never alone. Reach out for help when you need it.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Floating Action Button -->
+    <button class="fixed bottom-6 right-6 w-14 h-14 bg-primary text-primary-foreground rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-200 z-50 animate-bounce-slow">
+        <i class="fas fa-plus"></i>
+    </button>
+
+    <script>
+        // Theme toggle functionality
+        (() => {
+            const themeToggle = document.getElementById('themeToggle');
+            const body = document.body;
+            
+            // Check for saved theme preference or default to 'light'
+            const currentTheme = localStorage.getItem('theme') || 'light';
+            body.setAttribute('data-theme', currentTheme);
+            
+            themeToggle.addEventListener('click', () => {
+                const currentTheme = body.getAttribute('data-theme');
+                const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+                
+                body.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                
+                // Add smooth transition effect
+                body.style.transition = 'background-color 0.3s ease, color 0.3s ease';
+                setTimeout(() => {
+                    body.style.transition = '';
+                }, 300);
+            });
+        })();
+
+        // Smooth scrolling for anchor links
+        (() => {
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+        })();
+
+        // Animate stats on scroll
+        (() => {
+            const stats = document.querySelectorAll('[data-mock="true"]');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }
+                });
+            });
+
+            stats.forEach(stat => {
+                stat.style.opacity = '0';
+                stat.style.transform = 'translateY(20px)';
+                stat.style.transition = 'all 0.6s ease';
+                observer.observe(stat);
+            });
+        })();
+
+        // Add hover effects to cards
+        (() => {
+            const cards = document.querySelectorAll('.bg-card');
+            cards.forEach(card => {
+                card.addEventListener('mouseenter', () => {
+                    card.style.transform = 'translateY(-5px)';
+                });
+                card.addEventListener('mouseleave', () => {
+                    card.style.transform = 'translateY(0)';
+                });
+            });
+        })();
+    </script>
+</body>
+</html>

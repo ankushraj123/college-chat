@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useLogout } from "@/hooks/use-auth";
+import { useLogout, useAuth } from "@/hooks/use-auth";
 import type { Confession, DirectMessage } from "@shared/schema";
 
 export function AdminPanel() {
@@ -21,32 +21,35 @@ export function AdminPanel() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const logout = useLogout();
+  const { data: admin } = useAuth();
 
   // Get pending confessions
   const { data: pendingConfessions = [], isLoading: confessionsLoading } = useQuery({
-    queryKey: ["/api/admin/confessions/pending"],
+    queryKey: ["/api/admin/confessions/pending", admin?.collegeCode],
     queryFn: async () => {
       const sessionToken = localStorage.getItem("adminSessionToken");
-      const response = await fetch("/api/admin/confessions/pending", {
+      const response = await fetch(`/api/admin/confessions/pending?collegeCode=${admin?.collegeCode}`, {
         headers: sessionToken ? { "x-session-token": sessionToken } : {},
       });
       if (!response.ok) throw new Error("Failed to fetch pending confessions");
       return response.json() as Promise<Confession[]>;
     },
+    enabled: !!admin,
     refetchInterval: 5000, // Auto-refresh every 5 seconds
   });
 
   // Get pending direct messages
   const { data: pendingDMs = [], isLoading: dmsLoading } = useQuery({
-    queryKey: ["/api/admin/direct-messages/pending"],
+    queryKey: ["/api/admin/direct-messages/pending", admin?.collegeCode],
     queryFn: async () => {
       const sessionToken = localStorage.getItem("adminSessionToken");
-      const response = await fetch("/api/admin/direct-messages/pending", {
+      const response = await fetch(`/api/admin/direct-messages/pending?collegeCode=${admin?.collegeCode}`, {
         headers: sessionToken ? { "x-session-token": sessionToken } : {},
       });
       if (!response.ok) throw new Error("Failed to fetch pending direct messages");
       return response.json() as Promise<DirectMessage[]>;
     },
+    enabled: !!admin,
     refetchInterval: 5000, // Auto-refresh every 5 seconds
   });
 
