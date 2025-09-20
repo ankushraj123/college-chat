@@ -35,7 +35,7 @@ export function useLogin() {
       password: string;
       collegeCode: string;
     }) => {
-      const response = await apiRequest("POST", "/api/auth/login", { username, password, collegeCode });
+      const response = await apiRequest("POST", "/api/auth/login", { username, password, college_id: collegeCode });
       return response.json();
     },
     onSuccess: (data) => {
