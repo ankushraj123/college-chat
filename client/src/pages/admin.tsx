@@ -9,7 +9,7 @@ import { useAuth, useLogin, useLogout } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 
 export default function AdminPage() {
-  const [credentials, setCredentials] = useState({ username: "", password: "", collegeCode: "" });
+  const [credentials, setCredentials] = useState({ username: "", password: "", college_id: "" });
   const [showPassword, setShowPassword] = useState(false);
   
   const { data: user, isLoading: authLoading } = useAuth();
@@ -98,14 +98,14 @@ export default function AdminPage() {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="collegeCode">College Code</Label>
+                    <Label htmlFor="college_id">College ID</Label>
                     <Input
-                      id="collegeCode"
+                      id="college_id"
                       type="text"
-                      value={credentials.collegeCode}
-                      onChange={(e) => setCredentials(prev => ({ ...prev, collegeCode: e.target.value }))}
+                      value={credentials.college_id}
+                      onChange={(e) => setCredentials(prev => ({ ...prev, college_id: e.target.value }))}
                       required
-                      data-testid="input-college-code"
+                      data-testid="input-college-id"
                     />
                   </div>
                   

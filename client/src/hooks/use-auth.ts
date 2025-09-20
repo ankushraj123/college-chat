@@ -24,18 +24,22 @@ export function useAuth() {
 
 export function useLogin() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async ({
       username,
       password,
-      collegeCode,
+      college_id,
     }: {
       username: string;
       password: string;
-      collegeCode: string;
+      college_id: string;
     }) => {
-      const response = await apiRequest("POST", "/api/auth/login", { username, password, college_id: collegeCode });
+      const response = await apiRequest("POST", "/api/auth/login", {
+        username,
+        password,
+        college_id,
+      });
       return response.json();
     },
     onSuccess: (data) => {
