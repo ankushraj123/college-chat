@@ -40,7 +40,12 @@ export function ChiefDashboardPage() {
 
   const fetchAdmins = async () => {
     try {
-      const response = await fetch('/api/admins');
+      const sessionToken = localStorage.getItem('sessionToken');
+      const response = await fetch('/api/admins', {
+        headers: {
+          'x-session-token': sessionToken || '',
+        },
+      });
       if (!response.ok) {
         throw new Error('Failed to fetch admins');
       }
@@ -67,10 +72,12 @@ export function ChiefDashboardPage() {
 
   const handleCreateAdmin = async () => {
     try {
+      const sessionToken = localStorage.getItem('sessionToken');
       const response = await fetch('/api/admins', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-session-token': sessionToken || '',
         },
         body: JSON.stringify(newAdmin),
       });
@@ -95,10 +102,12 @@ export function ChiefDashboardPage() {
 
   const handleUpdateAdmin = async (adminId: number, updates: Partial<Admin>) => {
     try {
+      const sessionToken = localStorage.getItem('sessionToken');
       const response = await fetch(`/api/admins/${adminId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'x-session-token': sessionToken || '',
         },
         body: JSON.stringify(updates),
       });
@@ -121,8 +130,12 @@ export function ChiefDashboardPage() {
 
   const handleDeleteAdmin = async (adminId: number) => {
     try {
+      const sessionToken = localStorage.getItem('sessionToken');
       const response = await fetch(`/api/admins/${adminId}`, {
         method: 'DELETE',
+        headers: {
+          'x-session-token': sessionToken || '',
+        },
       });
 
       if (!response.ok) {
@@ -142,10 +155,12 @@ export function ChiefDashboardPage() {
   const handleToggleStatus = async (adminId: number, currentStatus: string) => {
     try {
       const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+      const sessionToken = localStorage.getItem('sessionToken');
       const response = await fetch(`/api/admins/${adminId}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'x-session-token': sessionToken || '',
         },
         body: JSON.stringify({ status: newStatus }),
       });

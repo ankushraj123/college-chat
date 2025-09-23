@@ -4,7 +4,7 @@ import { drizzle } from "drizzle-orm/mysql2";
 import { drizzle as drizzleSqlite } from "drizzle-orm/better-sqlite3";
 import Database from "better-sqlite3";
 import * as schema from "../shared/schema.js";
-import { eq, and, desc, asc, sql, count } from "drizzle-orm";
+import { eq, and, or, desc, asc, sql, count } from "drizzle-orm";
 import bcrypt from "bcrypt";
 
 let db: any;
@@ -39,22 +39,29 @@ try {
 
 export const storage = {
   // Session functions
-  createSession: async function(data: { userId: string; token: string; expiresAt: Date }) {
-    return await db.insert(schema.sessions).values(data);
+  createSession: async function(data: schema.InsertSession) {
+    const result = await db.insert(schema.sessions).values(data);
+    if (db.adapter.name === 'mysql2') {
+      const insertId = result[0].insertId;
+      const newSession = await db.select().from(schema.sessions).where(eq(schema.sessions.id, insertId)).limit(1);
+      return newSession[0];
+    }
+    // For sqlite, returning() is supported and more efficient
+    return result[0];
   },
 
   getSessionByToken: async function(token: string) {
     const result = await db.select()
       .from(schema.sessions)
-      .where(eq(schema.sessions.token, token))
+      .where(eq(schema.sessions.sessionToken, token))
       .limit(1);
     return result[0];
   },
 
-  updateSession: async function(token: string, data: Partial<{ expiresAt: Date }>) {
+  updateSession: async function(id: number, data: Partial<{ dailyConfessionCount: number, lastResetDate: string }>) {
     return await db.update(schema.sessions)
       .set(data)
-      .where(eq(schema.sessions.token, token));
+      .where(eq(schema.sessions.id, id));
   },
 
   // User functions
@@ -153,10 +160,13 @@ export const storage = {
       .where(eq(schema.confessions.id, id));
   },
 
-  getPendingConfessions: async function() {
+  getPendingConfessions: async function(collegeCode: string) {
     return await db.select()
       .from(schema.confessions)
-      .where(eq(schema.confessions.isApproved, false))
+      .where(and(
+        eq(schema.confessions.isApproved, false),
+        eq(schema.confessions.collegeCode, collegeCode)
+      ))
       .orderBy(desc(schema.confessions.createdAt));
   },
 
@@ -333,5 +343,11 @@ export const storage = {
     return await db.update(schema.userTokens)
       .set({ balance: sql`balance + ${amount}` })
       .where(eq(schema.userTokens.userId, userId));
+  },
+
+  getAdmins: async function() {
+    return await db.select()
+      .from(schema.users)
+      .where(eq(schema.users.role, 'admin'));
   },
 };

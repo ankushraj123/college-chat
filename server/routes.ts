@@ -10,7 +10,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Helper function to get or create session
   const getOrCreateSession = async (req: any) => {
     let sessionToken = req.headers['x-session-token'];
-    
+
     if (!sessionToken) {
       sessionToken = randomUUID();
       const session = await storage.createSession({
@@ -23,8 +23,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       return { session, isNew: true };
     }
-    
+
     let session = await storage.getSessionByToken(sessionToken);
+
     if (!session) {
       session = await storage.createSession({
         sessionToken,
@@ -36,7 +37,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       return { session, isNew: true };
     }
-    
+
     // Reset daily count if it's a new day
     const today = new Date().toDateString();
     if (session.lastResetDate !== today) {
@@ -47,33 +48,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
       session.dailyConfessionCount = 0;
       session.lastResetDate = today;
     }
-    
+
     return { session, isNew: false };
   };
 
   // Auth routes
   app.post("/api/auth/login", async (req, res) => {
     try {
-      const { username, password, collegeCode } = req.body;
-      
+      const { username, password, college_id } = req.body;
+
+      if (!username || !password || !college_id) {
+        return res.status(400).json({ error: "Username, password and college_id required" });
+      }
+
+      // Fetch user
       const user = await storage.getUserByUsername(username);
-      const passwordMatch = await bcrypt.compare(password, user?.password || '');
-      if (!user || !passwordMatch || user.collegeId !== collegeCode) {
+      if (!user) {
         return res.status(401).json({ error: "Invalid username, password, or college code" });
       }
-      
+
+      // Password check
+      const passwordMatch = await bcrypt.compare(password, user.password || "");
+      if (!passwordMatch) {
+        return res.status(401).json({ error: "Invalid username, password, or college code" });
+      }
+
+      // College check
+      const college = await storage.getCollegeByCode(college_id);
+      // For admins, we allow login with any valid college code.
+      // For regular users, it must match their assigned college.
+      if (!college || (user.role !== 'admin' && user.collegeId !== college.id)) {
+        return res.status(401).json({ error: "Invalid username, password, or college code" });
+      }
+
+      // Create session
       const sessionToken = randomUUID();
       const session = await storage.createSession({
         sessionToken,
         userId: user.id,
-        collegeCode: user.collegeId,
+        collegeCode: college.code,
         nickname: null,
         dailyConfessionCount: 0,
         lastResetDate: new Date().toDateString(),
       });
-      
-      res.json({ user, sessionToken, session });
+
+      // Secure response (never send password)
+      res.json({
+        sessionToken,
+        user: {
+          id: user.id,
+          username: user.username,
+          role: user.role,
+          collegeId: user.collegeId,
+        },
+      });
     } catch (error) {
+      console.error("Login error:", error);
       res.status(500).json({ error: "Login failed" });
     }
   });
@@ -120,6 +150,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(updatedSession);
     } catch (error) {
       res.status(500).json({ error: "Failed to update session" });
+    }
+  });
+
+  // Daily limit route
+  app.get("/api/daily-limit", async (req, res) => {
+    try {
+      const { session } = await getOrCreateSession(req);
+      const limit = 5;
+      const used = session.dailyConfessionCount || 0;
+      const remaining = Math.max(0, limit - used);
+      
+      res.json({ used, limit, remaining });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to check daily limit" });
     }
   });
 
@@ -315,13 +359,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-    app.post("/api/admins", async (req, res) => {
+  // Admin routes
+  app.post("/api/admins", async (req, res) => {
     try {
-      const { username, password, collegeCode } = req.body;
+      const sessionToken = req.headers['x-session-token'];
+      if (!sessionToken) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const session = await storage.getSessionByToken(sessionToken as string);
+      if (!session?.userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const user = await storage.getUser(session.userId);
+      if (!user || user.role !== "admin") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const { username, password, college_id } = req.body;
 
       // Basic validation
-      if (!username || !password || !collegeCode) {
-        return res.status(400).json({ error: "Username, password, and college code are required" });
+      if (!username || !password || !college_id) {
+        return res.status(400).json({ error: "Username, password, and college_id are required" });
       }
 
       // Check if user already exists
@@ -330,32 +390,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(409).json({ error: "User with that username already exists" });
       }
 
+      // College validation
+      const college = await storage.getCollegeByCode(college_id);
+      if (!college) {
+        return res.status(404).json({ error: "College not found" });
+      }
+
+      // Hash password before saving
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Create user with role = admin
       const newUser = await storage.createUser({
         username,
-        password,
-        collegeId: collegeCode, // Changed from collegeCode to collegeId
-        role: "admin", // New users created via this endpoint are always admins
-        // collegeId: null, // Assuming collegeId is not directly set here
+        password: hashedPassword,
+        collegeId: college.id,   // always use DB's id, not code
+        role: "admin",
       });
 
-      res.status(201).json(newUser);
+      res.status(201).json({
+        id: newUser.id,
+        username: newUser.username,
+        role: newUser.role,
+        collegeId: newUser.collegeId,
+      });
     } catch (error) {
       console.error("Failed to create admin:", error);
       res.status(500).json({ error: "Failed to create admin" });
     }
   });
 
+  // List all admins
   app.get("/api/admins", async (req, res) => {
     try {
+      const sessionToken = req.headers['x-session-token'];
+      if (!sessionToken) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const session = await storage.getSessionByToken(sessionToken as string);
+      if (!session?.userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const user = await storage.getUser(session.userId);
+      if (!user || user.role !== "admin") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
       const admins = await storage.getUsersByRole("admin");
-      res.json(admins);
+      // Don't leak password hashes
+      const safeAdmins = admins.map(a => ({
+        id: a.id,
+        username: a.username,
+        role: a.role,
+        collegeId: a.collegeId,
+      }));
+      res.json(safeAdmins);
     } catch (error) {
       console.error("Failed to fetch admins:", error);
       res.status(500).json({ error: "Failed to fetch admins" });
     }
   });
 
-  // Admin routes
+  // Session routes
   app.get("/api/admin/confessions/pending", async (req, res) => {
     try {
       const sessionToken = req.headers['x-session-token'];
@@ -373,7 +470,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Admin access required" });
       }
       
-      const confessions = await storage.getPendingConfessions();
+      if (!session.collegeCode) {
+        return res.status(400).json({ error: "Admin is not associated with a college" });
+      }
+      const confessions = await storage.getPendingConfessions(session.collegeCode);
       res.json(confessions);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch pending confessions" });
@@ -739,12 +839,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { session } = await getOrCreateSession(req);
       res.json({
-        used: session.dailyConfessionCount,
+        used: session.daily_confession_count,
         limit: 5,
-        remaining: Math.max(0, 5 - session.dailyConfessionCount),
+        remaining: Math.max(0, 5 - session.daily_confession_count),
       });
     } catch (error) {
       res.status(500).json({ error: "Failed to check daily limit" });
+    }
+  });
+
+  // Admin routes
+  app.get("/api/admins", async (req, res) => {
+    try {
+      const sessionToken = req.headers['x-session-token'];
+      if (!sessionToken) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const session = await storage.getSessionByToken(sessionToken as string);
+      if (!session?.userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const user = await storage.getUser(session.userId);
+      if (!user || user.role !== "admin") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const admins = await storage.getAdmins();
+      res.json(admins);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch admins" });
     }
   });
 

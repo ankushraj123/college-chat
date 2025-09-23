@@ -192,7 +192,8 @@ export default function AdminPage() {
               <div className="flex items-center space-x-2">
                 <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
                 <span className="text-sm text-muted-foreground">
-                  Logged in as <strong>{user.username}</strong> (College Admin - {user.collegeId})
+                  Logged in as <strong>{user.username}</strong> (College Admin) — 
+                  College Code: <strong>{user.collegeId}</strong>
                 </span>
               </div>
             </div>
@@ -219,45 +220,7 @@ export default function AdminPage() {
     );
   }
 
-  if (user.role === 'normal') {
-    return (
-      <div className="min-h-screen bg-background">
-        <Navigation />
-        <div className="container mx-auto px-4 pt-24 pb-8">
-          <div className="mb-6">
-            <div className="flex items-center justify-between">
-              <h1 className="text-3xl font-bold gradient-text" data-testid="text-admin-title">
-                Normal Admin Dashboard
-              </h1>
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-sm text-muted-foreground">
-                  Logged in as <strong>{user.username}</strong> (Normal Admin)
-                </span>
-              </div>
-            </div>
-          </div>
-          <div className="grid gap-6">
-            <div className="flex justify-end">
-              <Button 
-                onClick={() => logout.mutate()}
-                variant="destructive"
-                className="bg-red-600 hover:bg-red-700"
-              >
-                <i className="fas fa-sign-out-alt mr-2"></i>
-                Logout
-              </Button>
-            </div>
-            <iframe 
-              src="/normal-admin-dashboard" 
-              className="w-full h-screen border-0 rounded-lg"
-              title="Normal Admin Dashboard"
-            />
-          </div>
-        </div>
-      </div>
-    );
-  }
+
 
   // Fallback to original AdminPanel for backward compatibility
   return (

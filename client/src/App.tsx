@@ -11,7 +11,6 @@ import VipPage from "@/pages/vip";
 import NotFound from "@/pages/not-found";
 import { ChiefLoginPage } from "@/pages/chief-login";
 import { ChiefDashboardPage } from "@/pages/chief-dashboard";
-import { CollegeAdminDashboardPage } from "@/pages/college-admin-dashboard";
 import { NormalAdminDashboardPage } from "@/pages/normal-admin-dashboard";
 
 function Router() {
@@ -23,7 +22,6 @@ function Router() {
       <Route path="/vip" component={VipPage} />
       <Route path="/chief-login" component={ChiefLoginPage} />
       <Route path="/chief-dashboard" component={ChiefDashboardPage} />
-      <Route path="/college-admin-dashboard" component={CollegeAdminDashboardPage} />
       <Route path="/normal-admin-dashboard" component={NormalAdminDashboardPage} />
       <Route component={NotFound} />
     </Switch>
